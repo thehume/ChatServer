@@ -18,5 +18,52 @@
     <ClCompile Include="ChatServer.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="CNetServer.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="dumpClass.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Packet.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="profiler.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="ringbuffer.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="CNetServer.h">
+      <Filter>소스 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="dumpClass.h">
+      <Filter>소스 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="LockFreeQueue.h">
+      <Filter>소스 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="LockFreeStack.h">
+      <Filter>소스 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="MemoryPoolBucket.h">
+      <Filter>소스 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Packet.h">
+      <Filter>소스 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="profiler.h">
+      <Filter>소스 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="ringbuffer.h">
+      <Filter>소스 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="ChatServer.h">
+      <Filter>소스 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="CommonProtocol.h">
+      <Filter>소스 파일</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

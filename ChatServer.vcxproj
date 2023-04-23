@@ -130,6 +130,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <Optimization>Disabled</Optimization>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -140,6 +141,23 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ChatServer.cpp" />
+    <ClCompile Include="CNetServer.cpp" />
+    <ClCompile Include="dumpClass.cpp" />
+    <ClCompile Include="Packet.cpp" />
+    <ClCompile Include="profiler.cpp" />
+    <ClCompile Include="ringbuffer.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ChatServer.h" />
+    <ClInclude Include="CNetServer.h" />
+    <ClInclude Include="CommonProtocol.h" />
+    <ClInclude Include="dumpClass.h" />
+    <ClInclude Include="LockFreeQueue.h" />
+    <ClInclude Include="LockFreeStack.h" />
+    <ClInclude Include="MemoryPoolBucket.h" />
+    <ClInclude Include="Packet.h" />
+    <ClInclude Include="profiler.h" />
+    <ClInclude Include="ringbuffer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
