@@ -15,19 +15,6 @@ struct st_header
 
 #pragma pack()
 
-class CPacketRand
-{
-public:
-	CPacketRand()
-	{
-		mt19937_64 mt(rd());
-		this->mt = mt;
-	}
-
-	random_device rd;
-	mt19937_64 mt;
-};
-
 
 class CPacket
 {

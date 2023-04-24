@@ -3,6 +3,7 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <dbghelp.h>
+#include <random>
 #include <locale.h>
 #include <process.h>
 #include <stdlib.h>
@@ -478,7 +479,16 @@ void CNetServer::sendPacket(INT64 SessionID, CPacket* pPacket, BOOL LastPacket)
 		InterlockedCompareExchange(&pSession->disconnectStep, SESSION_SENDPACKET_LAST, SESSION_NORMAL_STATE);
 	}
 
-	sendPost(pSession);
+	//IOcount 1 올리고 PQCS
+	InterlockedIncrement(&pSession->IOcount);
+	if (PostQueuedCompletionStatus(hcp, dfSENDPOST_REQ, (ULONG_PTR)pSession, 0) == FALSE)
+	{
+		if (InterlockedDecrement(&pSession->IOcount) == 0)
+		{
+			releaseSession(SessionID);
+		}
+	}
+	//sendPost(pSession);
 
 	//사용완료
 
@@ -490,7 +500,18 @@ void CNetServer::sendPacket(INT64 SessionID, CPacket* pPacket, BOOL LastPacket)
 }
 
 
+void CNetServer::sendPacket(CSessionSet* pSessionSet, CPacket* pPacket, BOOL LastPacket)
+{
+	for (int i = 0; i < pSessionSet->Session_Count; i++)
+	{
+		sendPacket(pSessionSet->Session_Array[i], pPacket, LastPacket);
+	}
+}
 
+int CNetServer::getMaxSession()
+{
+	return this->maxSession;
+}
 
 int CNetServer::getSessionCount()
 {
@@ -518,11 +539,6 @@ int CNetServer::getSendMessageTPS()
 void CNetServer::attachHandler(CNetServerHandler* pHandler)
 {
 	this->pHandler = pHandler;
-}
-
-void CNetServer::attachIRPC(CNetServerIRPC* pIRPC)
-{
-	this->pIRPC = pIRPC;
 }
 
 DWORD WINAPI CNetServer::ControlThread(CNetServer* ptr)
@@ -681,8 +697,14 @@ DWORD WINAPI CNetServer::WorkerThread(CNetServer* ptr)
 
 		if (error_flag == FALSE)
 		{
+			//sendpacket 요청일시
+			if (transferred == dfSENDPOST_REQ && pOverlapped == 0)
+			{
+				ptr->sendPost(pSession);
+			}
+
 			//recv일시
-			if (pOverlapped->flag == 0)
+			else if (pOverlapped->flag == 0)
 			{
 
 				DWORD flags_send = 0;
@@ -736,7 +758,7 @@ DWORD WINAPI CNetServer::WorkerThread(CNetServer* ptr)
 					pRecvBuf->MoveReadPos(dfNETWORK_HEADER_SIZE);
 					pSession->recvQueue.MoveFront(header.len + dfNETWORK_HEADER_SIZE);
 					
-					ptr->pIRPC->OnRecv(pSession->sessionID, pRecvBuf);
+					ptr->pHandler->OnRecv(pSession->sessionID, pRecvBuf);
 					int ret_ref = pRecvBuf->subRef();
 					if (ret_ref == 0)
 					{
@@ -749,7 +771,7 @@ DWORD WINAPI CNetServer::WorkerThread(CNetServer* ptr)
 			}
 
 			//send일시
-			if (pOverlapped->flag == 1)
+			else if (pOverlapped->flag == 1)
 			{
 				if (pSession->disconnectStep == SESSION_SENDPOST_LAST)
 				{

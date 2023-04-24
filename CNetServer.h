@@ -1,6 +1,7 @@
 #pragma once
 
 #define dfMAX_SESSION 30000
+#define dfSESSION_SETSIZE 1000
 
 #define dfMAX_PACKET 950
 #define dfDATA_SIZE 8
@@ -12,6 +13,8 @@
 #define SESSION_SENDPACKET_LAST 1
 #define SESSION_SENDPOST_LAST 2
 #define SESSION_DISCONNECT 3
+
+#define dfSENDPOST_REQ 0xFFFF
 
 struct st_MyOverlapped
 {
@@ -39,6 +42,34 @@ struct alignas(4096) st_Session
 	CPacket* sentPacketArray[dfMAX_PACKET];
 };
 
+class CSessionSet
+{
+public:
+
+	CSessionSet()
+	{
+		Session_Count = 0;
+	}
+
+	void setClear()
+	{
+		Session_Count = 0;
+	}
+
+	BOOL setSession(INT64 sessionID)
+	{
+		if (Session_Count >= dfSESSION_SETSIZE)
+		{
+			return FALSE;
+		}
+		Session_Array[Session_Count++] = sessionID;
+		return TRUE;
+	}
+
+	SHORT Session_Count;
+	INT64 Session_Array[dfSESSION_SETSIZE];
+};
+
 class CInitParam
 {
 public:
@@ -61,7 +92,6 @@ public:
 };
 
 class CNetServerHandler;
-class CNetServerIRPC;
 
 class CNetServer
 {
@@ -76,8 +106,10 @@ public:
 	bool findSession(INT64 SessionID, st_Session** ppSession);
 	void disconnectSession(st_Session* pSession);
 	void sendPacket(INT64 SessionID, CPacket* packet, BOOL LastPacket = FALSE);
+	void sendPacket(CSessionSet* pSessionSet, CPacket* pPacket, BOOL LastPacket = FALSE);
 	void releaseSession(INT64 SessionID);
 
+	int getMaxSession();
 	int getSessionCount();
 	int getAcceptTPS();
 	int getDisconnectTPS();
@@ -85,7 +117,6 @@ public:
 	int getSendMessageTPS();
 
 	void attachHandler(CNetServerHandler* pHandler);
-	void attachIRPC(CNetServerIRPC* pIRPC);
 
 	static DWORD WINAPI ControlThread(CNetServer* ptr);
 	static DWORD WINAPI AcceptThread(CNetServer* ptr);
@@ -93,7 +124,6 @@ public:
 
 private:
 	CNetServerHandler* pHandler;
-	CNetServerIRPC* pIRPC;
 
 	CNetServer(const CNetServer& other) = delete;
 	const CNetServer& operator=(const CNetServer& other) = delete;
@@ -140,10 +170,5 @@ public:
 	virtual void OnClientJoin(long long sessionID) = 0;
 	virtual void OnClientLeave(long long sessionID) = 0;
 	virtual void OnError(int errorCode) = 0;
-};
-
-class CNetServerIRPC
-{
-public:
 	virtual bool OnRecv(long long sessionID, CPacket* pPacket) = 0;
 };

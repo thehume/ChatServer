@@ -41,7 +41,7 @@ CRingBuffer::CRingBuffer(int BufferSize)
 CRingBuffer::~CRingBuffer()
 {
     int ret = VirtualFree(begin, 0, MEM_RELEASE);
-    if (ret != 0)
+    if (ret == 0)
     {
         int* p = nullptr;
         *p = 0;

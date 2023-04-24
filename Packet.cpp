@@ -7,8 +7,8 @@ using namespace std;
 
 CMemoryPoolBucket<CPacket> CPacket::PacketPool;
 
+thread_local mt19937 generator(random_device{}());
 uniform_int_distribution<int> range(0, 255);
-thread_local CPacketRand RandGenerator;
 
 CPacket::CPacket()
 {
@@ -137,7 +137,7 @@ BOOL CPacket::Encode()
 	st_header* headerPos = (st_header*)this->begin;
 	headerPos->code = dfNETWORK_CODE;
 	headerPos->len = writePos - readPos - dfNETWORK_HEADER_SIZE;
-	unsigned char randkey = range(RandGenerator.mt);
+	unsigned char randkey = range(generator);
 	headerPos->randkey = randkey;
 
 	int Sum = 0;
