@@ -145,12 +145,12 @@ public:
     void CS_CHAT_RES_MESSAGE(CSessionSet* SessionSet, INT64 AccountNo, st_UserName ID, st_UserName Nickname, WORD MessageLen, st_Message& Message);
 
 
-    bool packetProc_CS_CHAT_REQ_LOGIN(st_Player* pPlayer, CPacket* pPacket);
-    bool packetProc_CS_CHAT_REQ_SECTOR_MOVE(st_Player* pPlayer, CPacket* pPacket);
-    bool packetProc_CS_CHAT_REQ_MESSAGE(st_Player* pPlayer, CPacket* pPacket);
-    bool packetProc_CS_CHAT_REQ_HEARTBEAT(st_Player* pPlayer, CPacket* pPacket);
+    bool packetProc_CS_CHAT_REQ_LOGIN(st_Player* pPlayer, CPacket* pPacket, INT64 SessionID);
+    bool packetProc_CS_CHAT_REQ_SECTOR_MOVE(st_Player* pPlayer, CPacket* pPacket, INT64 SessionID);
+    bool packetProc_CS_CHAT_REQ_MESSAGE(st_Player* pPlayer, CPacket* pPacket, INT64 SessionID);
+    bool packetProc_CS_CHAT_REQ_HEARTBEAT(st_Player* pPlayer, CPacket* pPacket, INT64 SessionID);
 
-    bool PacketProc(st_Player* pPlayer, WORD PacketType, CPacket* pPacket);
+    bool PacketProc(st_Player* pPlayer, WORD PacketType, CPacket* pPacket, INT64 SessionID);
     
     void getCharacterNum(void); // 캐릭터수
     void sector_AddCharacter(st_Player* pPlayer); //섹터에 캐릭터 넣음
@@ -166,8 +166,9 @@ private:
     ULONGLONG lastTime;
 
     CNetServer* pNetServer;
+
     st_Player PlayerList[dfMAX_SESSION];
-    list<st_Player*> g_Sector[dfSECTOR_MAX_Y][dfSECTOR_MAX_X];
+    list<INT64> g_Sector[dfSECTOR_MAX_Y][dfSECTOR_MAX_X];
     LockFreeQueue<st_JobItem> JobQueue;
 };
 
@@ -182,8 +183,10 @@ public:
     virtual bool OnConnectionRequest() { return true; }
     virtual void OnClientJoin(INT64 sessionID)
     {
+        /*
         short index = (short)sessionID;
         pChatServer->PlayerList[index].sessionID = sessionID;
+        */
     }
 
     virtual void OnClientLeave(INT64 sessionID)

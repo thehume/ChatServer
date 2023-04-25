@@ -102,7 +102,7 @@ void CChatServer::CS_CHAT_RES_MESSAGE(CSessionSet* SessionSet, INT64 AccountNo, 
 	}
 }
 
-bool CChatServer::packetProc_CS_CHAT_REQ_LOGIN(st_Player* pPlayer, CPacket* pPacket)
+bool CChatServer::packetProc_CS_CHAT_REQ_LOGIN(st_Player* pPlayer, CPacket* pPacket, INT64 SessionID)
 {
 	//------------------------------------------------------------
 	// 채팅서버 로그인 요청
@@ -128,6 +128,7 @@ bool CChatServer::packetProc_CS_CHAT_REQ_LOGIN(st_Player* pPlayer, CPacket* pPac
 	memcpy(&pPlayer->Nickname, Nickname.name, sizeof(st_UserName));
 	memcpy(&pPlayer->sessionKey, SessionKey.sessionKey, sizeof(st_SessionKey));
 
+	pPlayer->sessionID = SessionID;
 	pPlayer->isValid = TRUE;
 
 	//응답패킷 보내기.
@@ -135,7 +136,7 @@ bool CChatServer::packetProc_CS_CHAT_REQ_LOGIN(st_Player* pPlayer, CPacket* pPac
 
 	return true;
 }
-bool CChatServer::packetProc_CS_CHAT_REQ_SECTOR_MOVE(st_Player* pPlayer, CPacket* pPacket)
+bool CChatServer::packetProc_CS_CHAT_REQ_SECTOR_MOVE(st_Player* pPlayer, CPacket* pPacket, INT64 SessionID)
 {
 	//------------------------------------------------------------
 	// 채팅서버 섹터 이동 요청
@@ -185,7 +186,7 @@ bool CChatServer::packetProc_CS_CHAT_REQ_SECTOR_MOVE(st_Player* pPlayer, CPacket
 }
 
 
-bool CChatServer::packetProc_CS_CHAT_REQ_MESSAGE(st_Player* pPlayer, CPacket* pPacket)
+bool CChatServer::packetProc_CS_CHAT_REQ_MESSAGE(st_Player* pPlayer, CPacket* pPacket, INT64 SessionID)
 {
 	//------------------------------------------------------------
 	// 채팅서버 채팅보내기 요청
@@ -220,7 +221,7 @@ bool CChatServer::packetProc_CS_CHAT_REQ_MESSAGE(st_Player* pPlayer, CPacket* pP
 	return true;
 
 }
-bool CChatServer::packetProc_CS_CHAT_REQ_HEARTBEAT(st_Player* pPlayer, CPacket* pPacket)
+bool CChatServer::packetProc_CS_CHAT_REQ_HEARTBEAT(st_Player* pPlayer, CPacket* pPacket, INT64 SessionID)
 {
 	//------------------------------------------------------------
 	// 하트비트
@@ -239,24 +240,24 @@ bool CChatServer::packetProc_CS_CHAT_REQ_HEARTBEAT(st_Player* pPlayer, CPacket* 
 }
 
 
-bool CChatServer::PacketProc(st_Player* pPlayer, WORD PacketType, CPacket* pPacket)
+bool CChatServer::PacketProc(st_Player* pPlayer, WORD PacketType, CPacket* pPacket, INT64 SessionID)
 {
 	switch (PacketType)
 	{
 	case en_PACKET_CS_CHAT_REQ_LOGIN:
-		return packetProc_CS_CHAT_REQ_LOGIN(pPlayer, pPacket);
+		return packetProc_CS_CHAT_REQ_LOGIN(pPlayer, pPacket, SessionID);
 		break;
 
 	case en_PACKET_CS_CHAT_REQ_SECTOR_MOVE:
-		return packetProc_CS_CHAT_REQ_SECTOR_MOVE(pPlayer, pPacket);
+		return packetProc_CS_CHAT_REQ_SECTOR_MOVE(pPlayer, pPacket, SessionID);
 		break;
 
 	case en_PACKET_CS_CHAT_REQ_MESSAGE:
-		return packetProc_CS_CHAT_REQ_MESSAGE(pPlayer, pPacket);
+		return packetProc_CS_CHAT_REQ_MESSAGE(pPlayer, pPacket, SessionID);
 		break;
 
 	case en_PACKET_CS_CHAT_REQ_HEARTBEAT:
-		return packetProc_CS_CHAT_REQ_HEARTBEAT(pPlayer, pPacket);
+		return packetProc_CS_CHAT_REQ_HEARTBEAT(pPlayer, pPacket, SessionID);
 		break;
 
 	default:
@@ -309,37 +310,43 @@ DWORD WINAPI CChatServer::LogicThread(CChatServer* pChatServer)
 		CPacket* pPacket = jobItem.pPacket;
 		st_Player& player = pChatServer->PlayerList[index];
 
-		if (pPacket == NULL) // OnclientLeave Job
+		// OnclientLeave Job
+		if (pPacket == NULL) 
 		{
 			pChatServer->sector_RemoveCharacter(&player);
 			continue;
 		}
 
 		// OnRecv Job
-		if (player.sessionID != jobItem.SessionID )
-		{
-			if (pPacket->subRef() == 0)
-			{
-				CPacket::mFree(pPacket);
-			}
-			continue; // 예외처리는 좀더 생각해보기
-		}
-
-		if (player.isValid == FALSE)
-		{
-			if (pPacket->subRef() == 0)
-			{
-				CPacket::mFree(pPacket);
-			}
-			continue;
-		}
 
 		//pPacket에서 type 뺀다.
 		*pPacket >> packetType;
 
+		if (packetType != en_PACKET_CS_CHAT_REQ_LOGIN)
+		{
+			if (player.sessionID != jobItem.SessionID)
+			{
+				if (pPacket->subRef() == 0)
+				{
+					CPacket::mFree(pPacket);
+				}
+				continue; // 예외처리는 좀더 생각해보기
+			}
+
+			if (player.isValid == FALSE)
+			{
+				if (pPacket->subRef() == 0)
+				{
+					CPacket::mFree(pPacket);
+				}
+				continue;
+			}
+		}
+
+
 		//패킷 프로시져 타기
 		player.lastTime = GetTickCount64();
-		bool ret = pChatServer->PacketProc(&player, packetType, pPacket);
+		bool ret = pChatServer->PacketProc(&player, packetType, pPacket, jobItem.SessionID);
 		if (ret == false)
 		{
 			//아래부분 함수로 래핑
@@ -391,16 +398,16 @@ void CChatServer::sector_AddCharacter(st_Player* pPlayer) //섹터에 캐릭터 
 {
 	short Xpos = pPlayer->sectorPos.sectorX;
 	short Ypos = pPlayer->sectorPos.sectorY;
-	g_Sector[Ypos][Xpos].push_back(pPlayer);
+	g_Sector[Ypos][Xpos].push_back(pPlayer->sessionID);
 }
 void CChatServer::sector_RemoveCharacter(st_Player* pPlayer) //섹터에서 캐릭터 삭제
 {
 	short Xpos = pPlayer->sectorPos.sectorX;
 	short Ypos = pPlayer->sectorPos.sectorY;
-	list<st_Player*>::iterator iter = g_Sector[Ypos][Xpos].begin();
+	list<INT64>::iterator iter = g_Sector[Ypos][Xpos].begin();
 	for (; iter != g_Sector[Ypos][Xpos].end(); )
 	{
-		if (*iter == pPlayer)
+		if (*iter == pPlayer->sessionID)
 		{
 			iter = g_Sector[Ypos][Xpos].erase(iter);
 			return;
@@ -451,16 +458,16 @@ void CChatServer::makeSessionSet_AroundMe(st_Player* pPlayer, CSessionSet* InPar
 		sectorX = AroundMe.around[i].sectorX;
 		sectorY = AroundMe.around[i].sectorY;
 
-		list<st_Player*>& targetSector = g_Sector[sectorY][sectorX];
-		list<st_Player*>::iterator sectorIter;
+		list<INT64>& targetSector = g_Sector[sectorY][sectorX];
+		list<INT64>::iterator sectorIter;
 
 		for (sectorIter = targetSector.begin(); sectorIter != targetSector.end(); sectorIter++)
 		{
-			if (sendMe == false && *sectorIter == pPlayer)
+			if (sendMe == false && *sectorIter == pPlayer->sessionID)
 			{
 				continue;
 			}
-			InParamSet->setSession((*sectorIter)->sessionID);
+			InParamSet->setSession(*sectorIter);
 		}
 
 	}

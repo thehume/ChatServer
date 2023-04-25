@@ -735,7 +735,7 @@ DWORD WINAPI CNetServer::WorkerThread(CNetServer* ptr)
 
 					if (header.len + dfNETWORK_HEADER_SIZE > pSession->recvQueue.GetUseSize()) //링버퍼의 남은크기보다 크다면 잘못된 패킷
 					{
-						ptr->disconnectSession(pSession); 
+						ptr->disconnectSession(pSession);
 						break;
 					}
 
