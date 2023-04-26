@@ -7,8 +7,16 @@ using namespace std;
 #define dfSECTOR_MAX_X 50
 #define dfSECTOR_MAX_Y 50
 
+enum en_JobType
+{
+    en_JOB_ON_CLIENT_JOIN,
+    en_JOB_ON_RECV,
+    en_JOB_ON_CLIENT_LEAVE
+};
+
 struct st_JobItem
 {
+    INT64 JobType;
     INT64 SessionID;
     CPacket* pPacket;
 };
@@ -167,7 +175,7 @@ private:
 
     CNetServer* pNetServer;
 
-    st_Player PlayerList[dfMAX_SESSION];
+    unordered_map<INT64, st_Player> PlayerList;
     list<INT64> g_Sector[dfSECTOR_MAX_Y][dfSECTOR_MAX_X];
     LockFreeQueue<st_JobItem> JobQueue;
 };
@@ -183,27 +191,27 @@ public:
     virtual bool OnConnectionRequest() { return true; }
     virtual void OnClientJoin(INT64 sessionID)
     {
-        /*
-        short index = (short)sessionID;
-        pChatServer->PlayerList[index].sessionID = sessionID;
-        */
+        st_JobItem jobItem;
+        jobItem.JobType = en_JOB_ON_CLIENT_JOIN;
+        jobItem.SessionID = sessionID;
+        jobItem.pPacket = NULL;
+        pChatServer->JobQueue.Enqueue(jobItem); // 해당 캐릭터 생성요청
     }
 
     virtual void OnClientLeave(INT64 sessionID)
     {
-        short index = (short)sessionID;
-
-        InterlockedExchange((LONG*)&pChatServer->PlayerList[index].isValid, FALSE);
         st_JobItem jobItem;
+        jobItem.JobType = en_JOB_ON_CLIENT_LEAVE;
         jobItem.SessionID = sessionID;
         jobItem.pPacket = NULL;
-        pChatServer->JobQueue.Enqueue(jobItem); //섹터에서 해당 캐릭터 삭제요청
+        pChatServer->JobQueue.Enqueue(jobItem); //해당 캐릭터 삭제요청
     }
 
     virtual bool OnRecv(INT64 SessionID, CPacket* pPacket) //우선 시그널링방식은 아님! 채팅서버가 폴링을 할꺼기때문
     {
         pPacket->addRef(1);
         st_JobItem jobItem;
+        jobItem.JobType = en_JOB_ON_RECV;
         jobItem.SessionID = SessionID;
         jobItem.pPacket = pPacket;
         if (pChatServer->JobQueue.Enqueue(jobItem) == false)

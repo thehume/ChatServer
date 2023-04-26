@@ -28,18 +28,6 @@ CChatServer::CChatServer()
 	ShutDownFlag = false;
 	lastTime = 0;
 	pNetServer = NULL;
-
-	for (int i = 0; i < dfMAX_SESSION; i++)
-	{
-		PlayerList[i].isValid = FALSE;
-		PlayerList[i].AccountNo = 0;
-		wcscpy_s(PlayerList[i].ID.name, L"NULL");
-		wcscpy_s(PlayerList[i].Nickname.name, L"NULL");
-		PlayerList[i].sectorPos.sectorX = -1;
-		PlayerList[i].sectorPos.sectorY = -1;
-		PlayerList[i].sessionID = 0;
-		PlayerList[i].lastTime = 0;
-	}
 }
 
 
@@ -71,7 +59,7 @@ void CChatServer::CS_CHAT_RES_SECTOR_MOVE(INT64 SessionID, INT64 AccountNo, WORD
 	*pPacket << AccountNo;
 	*pPacket << SectorX;
 	*pPacket << SectorY;
-
+	                  
 	pNetServer->sendPacket(SessionID, pPacket);
 	if (pPacket->subRef() == 0)
 	{
@@ -79,7 +67,7 @@ void CChatServer::CS_CHAT_RES_SECTOR_MOVE(INT64 SessionID, INT64 AccountNo, WORD
 	}
 }
 
-//세션 셋으로 바꿀꺼다
+
 void CChatServer::CS_CHAT_RES_MESSAGE(CSessionSet* SessionSet, INT64 AccountNo, st_UserName ID, st_UserName Nickname, WORD MessageLen, st_Message& Message)
 {
 	WORD Type = en_PACKET_CS_CHAT_RES_MESSAGE;
@@ -128,9 +116,6 @@ bool CChatServer::packetProc_CS_CHAT_REQ_LOGIN(st_Player* pPlayer, CPacket* pPac
 	memcpy(&pPlayer->Nickname, Nickname.name, sizeof(st_UserName));
 	memcpy(&pPlayer->sessionKey, SessionKey.sessionKey, sizeof(st_SessionKey));
 
-	pPlayer->sessionID = SessionID;
-	pPlayer->isValid = TRUE;
-
 	//응답패킷 보내기.
 	CS_CHAT_RES_LOGIN(pPlayer->sessionID, TRUE, AccountNo);
 
@@ -162,7 +147,7 @@ bool CChatServer::packetProc_CS_CHAT_REQ_SECTOR_MOVE(st_Player* pPlayer, CPacket
 		return false;
 	}
 
-	if (SectorX >= 50 || SectorX < 0 || SectorY >= 50 || SectorY < 0)
+	if (SectorX >= dfSECTOR_MAX_X || SectorX < 0 || SectorY >= dfSECTOR_MAX_Y || SectorY < 0)
 	{
 		//로그찍기
 		return false;
@@ -170,7 +155,10 @@ bool CChatServer::packetProc_CS_CHAT_REQ_SECTOR_MOVE(st_Player* pPlayer, CPacket
 
 
 	//현재섹터에서 나 삭제
-	sector_RemoveCharacter(pPlayer);
+	if (pPlayer->sectorPos.sectorX >= 0 || pPlayer->sectorPos.sectorX < dfSECTOR_MAX_X || pPlayer->sectorPos.sectorY >= 0 || pPlayer->sectorPos.sectorY < dfSECTOR_MAX_Y)
+	{
+		sector_RemoveCharacter(pPlayer);
+	}
 
 	//나의 섹터정보 업데이트
 	pPlayer->sectorPos.sectorX = SectorX;
@@ -278,10 +266,9 @@ DWORD WINAPI CChatServer::LogicThread(CChatServer* pChatServer)
 		{
 			pChatServer->lastTime = curTime;
 			st_Session* pSession;
-			for (int i = 0; i < pChatServer->maxPlayer; i++)
+			for (auto iter = pChatServer->PlayerList.begin(); iter != pChatServer->PlayerList.end(); iter++)
 			{
-				st_Session* pSession;
-				st_Player& player = pChatServer->PlayerList[i];
+				st_Player& player = iter->second;
 				if (player.isValid == FALSE)
 				{
 					continue;
@@ -303,34 +290,68 @@ DWORD WINAPI CChatServer::LogicThread(CChatServer* pChatServer)
 
 		if (pChatServer->JobQueue.Dequeue(&jobItem) == false) //packet의 참조카운트는 올리면서 enqueue됨. 사용했으면 내려줘야함
 		{
+			Sleep(10);
 			continue;
 		}
 
-		short index = (short)jobItem.SessionID;
+		INT64 JobType = jobItem.JobType;
+		INT64 sessionID = jobItem.SessionID;
 		CPacket* pPacket = jobItem.pPacket;
-		st_Player& player = pChatServer->PlayerList[index];
+		//st_Player& player = pChatServer->PlayerList[index];
 
-		// OnclientLeave Job
-		if (pPacket == NULL) 
+		switch (JobType)
 		{
-			pChatServer->sector_RemoveCharacter(&player);
-			continue;
+		case en_JOB_ON_CLIENT_JOIN:
+		{
+			//여기 플레이어리스트에 넣어주는게 필요함
+			st_Player newPlayer;
+			newPlayer.isValid = true;
+			newPlayer.AccountNo = 0;
+			wcscpy_s(newPlayer.ID.name, L"NULL");
+			wcscpy_s(newPlayer.Nickname.name, L"NULL");
+			newPlayer.sectorPos.sectorX = 65535;
+			newPlayer.sectorPos.sectorY = 65535;
+			newPlayer.sessionID = sessionID;
+			newPlayer.lastTime = GetTickCount64();
+
+			pChatServer->PlayerList.insert(make_pair(sessionID, newPlayer));
+			break;
 		}
 
-		// OnRecv Job
-
-		//pPacket에서 type 뺀다.
-		*pPacket >> packetType;
-
-		if (packetType != en_PACKET_CS_CHAT_REQ_LOGIN)
+		case en_JOB_ON_CLIENT_LEAVE:
 		{
+			//여기 플레이어리스트에서 지워주는게 필요함
+			auto item = pChatServer->PlayerList.find(sessionID);
+			if (item != pChatServer->PlayerList.end())
+			{
+				pChatServer->sector_RemoveCharacter(&item->second);
+				pChatServer->PlayerList.erase(item);
+			}
+			break;
+		}
+
+		case en_JOB_ON_RECV:
+		{
+			*pPacket >> packetType;
+			
+			auto item = pChatServer->PlayerList.find(sessionID);
+			if (item == pChatServer->PlayerList.end())
+			{
+				if (pPacket->subRef() == 0)
+				{
+					CPacket::mFree(pPacket);
+				}
+				break;
+			}
+
+			st_Player& player = item->second;
 			if (player.sessionID != jobItem.SessionID)
 			{
 				if (pPacket->subRef() == 0)
 				{
 					CPacket::mFree(pPacket);
 				}
-				continue; // 예외처리는 좀더 생각해보기
+				break; // 예외처리는 좀더 생각해보기
 			}
 
 			if (player.isValid == FALSE)
@@ -339,31 +360,34 @@ DWORD WINAPI CChatServer::LogicThread(CChatServer* pChatServer)
 				{
 					CPacket::mFree(pPacket);
 				}
-				continue;
+				break;
 			}
-		}
+			
 
-
-		//패킷 프로시져 타기
-		player.lastTime = GetTickCount64();
-		bool ret = pChatServer->PacketProc(&player, packetType, pPacket, jobItem.SessionID);
-		if (ret == false)
-		{
-			//아래부분 함수로 래핑
-			st_Session* pSession;
-			if (pChatServer->pNetServer->findSession(player.sessionID, &pSession) == true)
+			//패킷 프로시져 타기
+			player.lastTime = GetTickCount64();
+			bool ret = pChatServer->PacketProc(&player, packetType, pPacket, jobItem.SessionID);
+			if (ret == false)
 			{
-				pChatServer->pNetServer->disconnectSession(pSession);
-				if (InterlockedDecrement(&pSession->IOcount) == 0)
+				//아래부분 함수로 래핑
+				st_Session* pSession;
+				if (pChatServer->pNetServer->findSession(player.sessionID, &pSession) == true)
 				{
-					pChatServer->pNetServer->releaseSession(player.sessionID);
+					pChatServer->pNetServer->disconnectSession(pSession);
+					if (InterlockedDecrement(&pSession->IOcount) == 0)
+					{
+						pChatServer->pNetServer->releaseSession(player.sessionID);
+					}
 				}
 			}
+
+			if (pPacket->subRef() == 0)
+			{
+				CPacket::mFree(pPacket);
+			}
+			break;
 		}
 
-		if (pPacket->subRef() == 0)
-		{
-			CPacket::mFree(pPacket);
 		}
 
 	}
