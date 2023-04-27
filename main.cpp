@@ -47,6 +47,7 @@ int main()
 	{
 		wprintf(L"======================\n");
 		wprintf(L"session number : %d\n", NetServer.getSessionCount());
+		wprintf(L"Character Number : %d\n", ChatServer.getCharacterNum());
 		wprintf(L"Accept TPS : %d\n", NetServer.getAcceptTPS());
 		wprintf(L"Disconnect TPS : %d\n", NetServer.getDisconnectTPS());
 		wprintf(L"Send TPS : %d\n", NetServer.getSendMessageTPS());

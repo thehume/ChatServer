@@ -414,9 +414,9 @@ bool CChatServer::Stop()
 	return true;
 }
 
-void CChatServer::getCharacterNum(void) // 캐릭터수
+size_t CChatServer::getCharacterNum(void) // 캐릭터수
 {
-
+	return PlayerList.size();
 }
 void CChatServer::sector_AddCharacter(st_Player* pPlayer) //섹터에 캐릭터 넣음
 {

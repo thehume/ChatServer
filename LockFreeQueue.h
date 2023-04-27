@@ -140,6 +140,6 @@ public:
 	volatile INT64 front;//deQ 위치
 	volatile INT64 rear;//enQ 위치
 	volatile LONG nodeCount = 0;
-	char space[64];
-	CMemoryPool<Node> NodePool;
+	//char space[64];
+	alignas(64) CMemoryPool<Node> NodePool;
 };

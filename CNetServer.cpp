@@ -723,18 +723,21 @@ DWORD WINAPI CNetServer::WorkerThread(CNetServer* ptr)
 					pSession->recvQueue.Peek((char*)&header, sizeof(st_header));
 					if (header.code != dfNETWORK_CODE) //key값 다를시 잘못된 패킷
 					{
+						//로그찍을 위치
 						ptr->disconnectSession(pSession);
 						break;
 					}
 
 					if (header.len > CPacket::en_PACKET::BUFFER_DEFAULT || header.len < 0) // len값 부정확할시 잘못된 패킷
 					{
+						//로그찍을 위치
 						ptr->disconnectSession(pSession);
 						break;
 					}
 
 					if (header.len + dfNETWORK_HEADER_SIZE > pSession->recvQueue.GetUseSize()) //링버퍼의 남은크기보다 크다면 잘못된 패킷
 					{
+						//로그찍을 위치
 						ptr->disconnectSession(pSession);
 						break;
 					}
@@ -745,12 +748,14 @@ DWORD WINAPI CNetServer::WorkerThread(CNetServer* ptr)
 					int ret_dequeue = pSession->recvQueue.Dequeue(pRecvBuf->GetWriteBufferPtr(), header.len + dfNETWORK_HEADER_SIZE);
 					if (ret_dequeue <= 0)
 					{
+						//로그찍을 위치
 						ptr->disconnectSession(pSession); //Dequeue 오류
 						break;
 					}
 					pRecvBuf->MoveWritePos(ret_dequeue);
 					if (pRecvBuf->Decode() == FALSE)
 					{
+						//로그찍을 위치
 						ptr->disconnectSession(pSession); //패킷 디코딩 실패
 						break;
 					}
