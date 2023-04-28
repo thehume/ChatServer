@@ -1,14 +1,14 @@
 #pragma once
 
 #define dfNETWORK_HEADER_SIZE 5
-#define dfNETWORK_CODE 0xa9
+#define dfNETWORK_CODE 0x77
 
 #pragma pack(1)
 
 struct st_header
 {
 	unsigned char code;
-	short len;
+	unsigned short len;
 	unsigned char randkey;
 	unsigned char checksum;
 };

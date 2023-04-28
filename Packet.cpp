@@ -148,7 +148,7 @@ BOOL CPacket::Encode()
 	}
 	headerPos->checksum = Sum % 256;
 
-	unsigned char* encodingPos = &headerPos->randkey;
+	unsigned char* encodingPos = &headerPos->checksum;
 	unsigned char lastE = 0;
 	unsigned char lastP = 0;
 	for (int i = 0; i < DataSize - dfNETWORK_HEADER_SIZE+1; i++)

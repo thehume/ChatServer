@@ -36,6 +36,7 @@ void CChatServer::CS_CHAT_RES_LOGIN(INT64 SessionID, BYTE Status, INT64 AccountN
 	WORD Type = en_PACKET_CS_CHAT_RES_LOGIN;
 
 	CPacket* pPacket = CPacket::mAlloc();
+	pPacket->Clear();
 	pPacket->addRef(1);
 
 	*pPacket << Type;
@@ -53,6 +54,7 @@ void CChatServer::CS_CHAT_RES_SECTOR_MOVE(INT64 SessionID, INT64 AccountNo, WORD
 	WORD Type = en_PACKET_CS_CHAT_RES_SECTOR_MOVE;
 
 	CPacket* pPacket = CPacket::mAlloc();
+	pPacket->Clear();
 	pPacket->addRef(1);
 
 	*pPacket << Type;
@@ -73,6 +75,7 @@ void CChatServer::CS_CHAT_RES_MESSAGE(CSessionSet* SessionSet, INT64 AccountNo, 
 	WORD Type = en_PACKET_CS_CHAT_RES_MESSAGE;
 
 	CPacket* pPacket = CPacket::mAlloc();
+	pPacket->Clear();
 	pPacket->addRef(1);
 
 	*pPacket << Type;
@@ -147,15 +150,17 @@ bool CChatServer::packetProc_CS_CHAT_REQ_SECTOR_MOVE(st_Player* pPlayer, CPacket
 		return false;
 	}
 
+	/*
 	if (SectorX >= dfSECTOR_MAX_X || SectorX < 0 || SectorY >= dfSECTOR_MAX_Y || SectorY < 0)
 	{
 		//로그찍기
 		return false;
 	}
+	*/
 
 
 	//현재섹터에서 나 삭제
-	if (pPlayer->sectorPos.sectorX >= 0 || pPlayer->sectorPos.sectorX < dfSECTOR_MAX_X || pPlayer->sectorPos.sectorY >= 0 || pPlayer->sectorPos.sectorY < dfSECTOR_MAX_Y)
+	if (pPlayer->sectorPos.sectorX >= 0 && pPlayer->sectorPos.sectorX < dfSECTOR_MAX_X && pPlayer->sectorPos.sectorY >= 0 && pPlayer->sectorPos.sectorY < dfSECTOR_MAX_Y)
 	{
 		sector_RemoveCharacter(pPlayer);
 	}
@@ -324,7 +329,11 @@ DWORD WINAPI CChatServer::LogicThread(CChatServer* pChatServer)
 			auto item = pChatServer->PlayerList.find(sessionID);
 			if (item != pChatServer->PlayerList.end())
 			{
-				pChatServer->sector_RemoveCharacter(&item->second);
+				st_SectorPos& sectorPos = item->second.sectorPos;
+				if (sectorPos.sectorX < dfSECTOR_MAX_X && sectorPos.sectorX >= 0 && sectorPos.sectorY < dfSECTOR_MAX_Y && sectorPos.sectorY >= 0)
+				{
+					pChatServer->sector_RemoveCharacter(&item->second);
+				}
 				pChatServer->PlayerList.erase(item);
 			}
 			break;
@@ -428,6 +437,9 @@ void CChatServer::sector_RemoveCharacter(st_Player* pPlayer) //섹터에서 캐�
 {
 	short Xpos = pPlayer->sectorPos.sectorX;
 	short Ypos = pPlayer->sectorPos.sectorY;
+
+	
+
 	list<INT64>::iterator iter = g_Sector[Ypos][Xpos].begin();
 	for (; iter != g_Sector[Ypos][Xpos].end(); )
 	{

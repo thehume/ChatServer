@@ -33,6 +33,21 @@ CChatServer ChatServer;
 
 int main()
 {
+	/*
+	int a = 1;
+	int b = 2;
+	int c = 3;
+	int d = 4;
+	int e = 5;
+	CPacket* Buf = CPacket::mAlloc();
+	Buf->Clear();
+	*Buf << a << b << c << d << e;
+	Buf->Encode();
+	Buf->Decode();
+
+	Sleep(10000000);
+	*/
+
 	CContentsHandler HandleInstance;
 	HandleInstance.attachServerInstance(&NetServer, &ChatServer);
 
@@ -43,11 +58,11 @@ int main()
 	NetServer.Start();
 	int i = 10;
 
-	while (i>0)
+	while (1)
 	{
 		wprintf(L"======================\n");
 		wprintf(L"session number : %d\n", NetServer.getSessionCount());
-		wprintf(L"Character Number : %d\n", ChatServer.getCharacterNum());
+		wprintf(L"Character Number : %lld\n", ChatServer.getCharacterNum());
 		wprintf(L"Accept TPS : %d\n", NetServer.getAcceptTPS());
 		wprintf(L"Disconnect TPS : %d\n", NetServer.getDisconnectTPS());
 		wprintf(L"Send TPS : %d\n", NetServer.getSendMessageTPS());
@@ -55,7 +70,7 @@ int main()
 		wprintf(L"PacketPool UseSize : %d\n", CPacket::getPoolUseSize() * POOL_BUCKET_SIZE);
 		wprintf(L"======================\n");
 		Sleep(1000);
-		i--;
+		//i--;
 	}
 
 	ChatServer.Stop();
