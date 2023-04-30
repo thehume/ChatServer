@@ -145,6 +145,7 @@ BOOL CPacket::Encode()
 	for (int i = 0; i < DataSize-dfNETWORK_HEADER_SIZE; i++)
 	{
 		Sum += *payloadPos;
+		payloadPos++;
 	}
 	headerPos->checksum = Sum % 256;
 
@@ -154,12 +155,12 @@ BOOL CPacket::Encode()
 	for (int i = 0; i < DataSize - dfNETWORK_HEADER_SIZE+1; i++)
 	{
 		lastP = (*encodingPos) ^ (lastP + randkey + i + 1);
-		*encodingPos = lastP ^ (lastE + dfNETWORK_CODE + i + 1);
+		*encodingPos = lastP ^ (lastE + dfNETWORK_KEY + i + 1);
 		lastE = *encodingPos;
 		encodingPos++;
 	}
 
-	this->encodeFlag = TRUE;
+	InterlockedExchange((LONG*)&encodeFlag, TRUE);
 	return TRUE;
 }
 
@@ -173,14 +174,14 @@ BOOL CPacket::Decode()
 	st_header* headerPos = (st_header*)this->begin;
 
 	unsigned char* decodingPos = &headerPos->checksum;
-	unsigned char code = headerPos->code;
+	unsigned char key = dfNETWORK_KEY;
 	unsigned char randkey = headerPos->randkey;
 	unsigned char lastE = 0;
 	unsigned char lastP = 0;
 	unsigned char nowP = 0;
 	for (int i = 0; i < headerPos->len+1; i++)
 	{
-		nowP = *decodingPos ^ (lastE + code + i + 1);
+		nowP = *decodingPos ^ (lastE + key + i + 1);
 		lastE = *decodingPos;
 		*decodingPos = nowP ^ (lastP + randkey + i + 1);
 		lastP = nowP;
@@ -188,10 +189,11 @@ BOOL CPacket::Decode()
 	}
 	//checksum 재생성후 확인
 	int Sum = 0;
-	unsigned char* payloadPos = (unsigned char*)this->begin + dfNETWORK_HEADER_SIZE;
+	unsigned char* payloadPos = (unsigned char*)headerPos+sizeof(st_header);
 	for (int i = 0; i < headerPos->len; i++)
 	{
 		Sum += *payloadPos;
+		payloadPos++;
 	}
 	unsigned char checkSum = Sum % 256;
 	if (checkSum != headerPos->checksum)
@@ -202,11 +204,14 @@ BOOL CPacket::Decode()
 	return TRUE;
 }
 
+
+
 CPacket* CPacket::mAlloc()
 {
 	CPacket* temp;
 	PacketPool.mAlloc(&temp);
 	temp->refCount = 0;
+	temp->encodeFlag = FALSE;
 	temp->MoveWritePos(dfNETWORK_HEADER_SIZE);
 	return temp;
 }

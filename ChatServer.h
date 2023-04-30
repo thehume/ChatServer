@@ -24,7 +24,7 @@ struct st_JobItem
 struct st_Message
 {
     DWORD len;
-    WCHAR msg[50];
+    WCHAR msg[500];
 };
 
 struct st_UserName
@@ -45,7 +45,6 @@ inline CPacket& operator << (CPacket& packet, st_UserName& userName)
     {
         memcpy(packet.GetWriteBufferPtr(), userName.name, sizeof(st_UserName));
         packet.MoveWritePos(sizeof(st_UserName));
-        packet.AddDataSize(sizeof(st_UserName));
     }
     return packet;
 }
@@ -57,7 +56,6 @@ inline CPacket& operator << (CPacket& packet, st_Message& Message)
     {
         memcpy(packet.GetWriteBufferPtr(), Message.msg, Message.len);
         packet.MoveWritePos(Message.len);
-        packet.AddDataSize(Message.len);
     }
     return packet;
 }
@@ -69,7 +67,6 @@ inline CPacket& operator << (CPacket& packet, st_SessionKey& SessionKey)
     {
         memcpy(packet.GetWriteBufferPtr(), SessionKey.sessionKey, sizeof(st_SessionKey));
         packet.MoveWritePos(sizeof(st_SessionKey));
-        packet.AddDataSize(sizeof(st_SessionKey));
     }
     return packet;
 }
@@ -80,7 +77,6 @@ inline CPacket& operator >> (CPacket& packet, st_UserName& userName)
     {
         memcpy(userName.name, packet.GetReadBufferPtr(), sizeof(st_UserName));
         packet.MoveReadPos(sizeof(st_UserName));
-        packet.SubDataSize(sizeof(st_UserName));
     }
     return packet;
 }
@@ -91,7 +87,6 @@ inline CPacket& operator >> (CPacket& packet, st_Message& Message)
     {
         memcpy(Message.msg, packet.GetReadBufferPtr(), Message.len);
         packet.MoveReadPos(Message.len);
-        packet.SubDataSize(Message.len);
     }
     return packet;
 }
@@ -102,7 +97,6 @@ inline CPacket& operator >> (CPacket& packet, st_SessionKey& SessionKey)
     {
         memcpy(SessionKey.sessionKey, packet.GetReadBufferPtr(), sizeof(st_SessionKey));
         packet.MoveReadPos(sizeof(st_SessionKey));
-        packet.SubDataSize(sizeof(st_SessionKey));
     }
     return packet;
 }
@@ -161,11 +155,12 @@ public:
     bool PacketProc(st_Player* pPlayer, WORD PacketType, CPacket* pPacket, INT64 SessionID);
     
     size_t getCharacterNum(void); // 캐릭터수
+    LONG getJobQueueUseSize(void);
     void sector_AddCharacter(st_Player* pPlayer); //섹터에 캐릭터 넣음
     void sector_RemoveCharacter(st_Player* pPlayer); //섹터에서 캐릭터 삭제
     void getSectorAround(int sectorX, int sectorY, st_SectorAround* pSectorAround); //현재섹터 기준으로 9개섹터
     void makeSessionSet_AroundMe(st_Player* pPlayer, CSessionSet* InParamSet, bool sendMe = true); //"나" 기준으로 주위섹터의 세션 셋 가져옴
-    
+
 
 private:
     HANDLE hLogicThread;

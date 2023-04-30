@@ -110,6 +110,7 @@ public:
 	void releaseSession(INT64 SessionID);
 
 	int getMaxSession();
+	INT64 getAcceptSum();
 	int getSessionCount();
 	int getAcceptTPS();
 	int getDisconnectTPS();
@@ -145,6 +146,7 @@ private:
 
 	INT64 sessionAllocNum;
 
+	INT64 acceptSum = 0;
 	DWORD acceptCount = 0;
 	DWORD disconnectCount = 0;
 	DWORD sendCount = 0;

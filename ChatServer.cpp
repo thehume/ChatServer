@@ -84,7 +84,14 @@ void CChatServer::CS_CHAT_RES_MESSAGE(CSessionSet* SessionSet, INT64 AccountNo, 
 	*pPacket << Nickname;
 	*pPacket << MessageLen;
 	*pPacket << Message;
-
+	/*
+	FILE* fp;
+	if (!fopen_s(&fp, "CHAT_MESSAGE", "at"))
+	{
+		fwprintf_s(fp, L"send len : %d, chat message : %s\n", Message.len, Message.msg);
+		fclose(fp);
+	}
+	*/
 
 	pNetServer->sendPacket(SessionSet, pPacket);
 	if (pPacket->subRef() == 0)
@@ -199,6 +206,15 @@ bool CChatServer::packetProc_CS_CHAT_REQ_MESSAGE(st_Player* pPlayer, CPacket* pP
 	*pPacket >> AccountNo >> MessageLen;
 	Message.len = MessageLen;
 	*pPacket >> Message;
+
+	/*
+	FILE* fp;
+	if (!fopen_s(&fp, "CHAT_MESSAGE", "at"))
+	{
+		fwprintf_s(fp, L"recv len : %d, chat message : %s\n", Message.len, Message.msg);
+		fclose(fp);
+	}
+	*/
 
 	if (pPlayer->AccountNo != AccountNo)
 	{
@@ -427,6 +443,12 @@ size_t CChatServer::getCharacterNum(void) // 캐릭터수
 {
 	return PlayerList.size();
 }
+
+LONG CChatServer::getJobQueueUseSize(void)
+{
+	return this->JobQueue.nodeCount;
+}
+
 void CChatServer::sector_AddCharacter(st_Player* pPlayer) //섹터에 캐릭터 넣음
 {
 	short Xpos = pPlayer->sectorPos.sectorX;

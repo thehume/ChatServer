@@ -522,6 +522,11 @@ int CNetServer::getAcceptTPS()
 	return this->acceptTPS;
 }
 
+INT64 CNetServer::getAcceptSum()
+{
+	return this->acceptSum;
+}
+
 int CNetServer::getDisconnectTPS()
 {
 	return this->disconnectTPS;
@@ -595,6 +600,7 @@ DWORD WINAPI CNetServer::AcceptThread(CNetServer* ptr)
 			wprintf(L"accept error\n");
 			break;
 		}
+		ptr->acceptSum++;
 		ptr->acceptCount++;
 		char clientIP1[20] = { 0 };
 		inet_ntop(AF_INET, &clientaddr.sin_addr, clientIP1, sizeof(clientIP1));
@@ -735,11 +741,12 @@ DWORD WINAPI CNetServer::WorkerThread(CNetServer* ptr)
 						break;
 					}
 
-					if (header.len + dfNETWORK_HEADER_SIZE > pSession->recvQueue.GetUseSize()) //링버퍼의 남은크기보다 크다면 잘못된 패킷
+					if (header.len + dfNETWORK_HEADER_SIZE > pSession->recvQueue.GetUseSize()) //아직 다 안 온 상황
 					{
 						//로그찍을 위치
-						ptr->disconnectSession(pSession);
-						break;
+						
+						//ptr->disconnectSession(pSession);
+						break;						
 					}
 
 					CPacket* pRecvBuf = CPacket::mAlloc();
@@ -761,7 +768,6 @@ DWORD WINAPI CNetServer::WorkerThread(CNetServer* ptr)
 					}
 
 					pRecvBuf->MoveReadPos(dfNETWORK_HEADER_SIZE);
-					pSession->recvQueue.MoveFront(header.len + dfNETWORK_HEADER_SIZE);
 					
 					ptr->pHandler->OnRecv(pSession->sessionID, pRecvBuf);
 					int ret_ref = pRecvBuf->subRef();
@@ -791,6 +797,10 @@ DWORD WINAPI CNetServer::WorkerThread(CNetServer* ptr)
 					if (ret_ref == 0)
 					{
 						CPacket::mFree(pPacket);
+					}
+					else if(ret_ref < 0)
+					{
+						printf("abc");
 					}
 				}
 				InterlockedExchange(&pSession->sendPacketCount, 0);

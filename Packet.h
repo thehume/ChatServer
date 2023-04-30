@@ -2,6 +2,7 @@
 
 #define dfNETWORK_HEADER_SIZE 5
 #define dfNETWORK_CODE 0x77
+#define dfNETWORK_KEY 0x32
 
 #pragma pack(1)
 
@@ -87,6 +88,8 @@ public:
 	friend class CMemoryPool<CPacket>;
 	static CMemoryPoolBucket<CPacket> PacketPool;
 
+	int DataSize; //current use size
+
 private:
 	CPacket();
 	CPacket& operator = (CPacket& SrcPacket);
@@ -94,7 +97,6 @@ private:
 	virtual ~CPacket();
 
 	int BufferSize; //whole size
-	int DataSize; //current use size
 	
 	LONG refCount;
 
