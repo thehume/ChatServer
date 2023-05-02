@@ -143,8 +143,10 @@
     <ClCompile Include="ChatServer.cpp" />
     <ClCompile Include="CNetServer.cpp" />
     <ClCompile Include="dumpClass.cpp" />
+    <ClCompile Include="HardwareMonitor.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Packet.cpp" />
+    <ClCompile Include="ProcessMonitor.cpp" />
     <ClCompile Include="profiler.cpp" />
     <ClCompile Include="ringbuffer.cpp" />
   </ItemGroup>
@@ -153,10 +155,12 @@
     <ClInclude Include="CNetServer.h" />
     <ClInclude Include="CommonProtocol.h" />
     <ClInclude Include="dumpClass.h" />
+    <ClInclude Include="HardwareMonitor.h" />
     <ClInclude Include="LockFreeQueue.h" />
     <ClInclude Include="LockFreeStack.h" />
     <ClInclude Include="MemoryPoolBucket.h" />
     <ClInclude Include="Packet.h" />
+    <ClInclude Include="ProcessMonitor.h" />
     <ClInclude Include="profiler.h" />
     <ClInclude Include="ringbuffer.h" />
   </ItemGroup>

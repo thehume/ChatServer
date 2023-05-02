@@ -174,6 +174,7 @@ private:
 
     alignas(64) list<INT64> g_Sector[dfSECTOR_MAX_Y][dfSECTOR_MAX_X];
     alignas(64) LockFreeQueue<st_JobItem> JobQueue;
+    alignas(64) HANDLE hJobEvent;
 };
 
 class CContentsHandler : public CNetServerHandler
@@ -192,6 +193,7 @@ public:
         jobItem.SessionID = sessionID;
         jobItem.pPacket = NULL;
         pChatServer->JobQueue.Enqueue(jobItem); // 해당 캐릭터 생성요청
+        SetEvent(pChatServer->hJobEvent);
     }
 
     virtual void OnClientLeave(INT64 sessionID)
@@ -201,6 +203,7 @@ public:
         jobItem.SessionID = sessionID;
         jobItem.pPacket = NULL;
         pChatServer->JobQueue.Enqueue(jobItem); //해당 캐릭터 삭제요청
+        SetEvent(pChatServer->hJobEvent);
     }
 
     virtual bool OnRecv(INT64 SessionID, CPacket* pPacket) //우선 시그널링방식은 아님! 채팅서버가 폴링을 할꺼기때문
@@ -218,6 +221,8 @@ public:
             }
             return false;
         }
+        SetEvent(pChatServer->hJobEvent);
+
 
         return true;
     }

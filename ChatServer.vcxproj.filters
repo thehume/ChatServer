@@ -36,6 +36,12 @@
     <ClCompile Include="main.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="ProcessMonitor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="HardwareMonitor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CNetServer.h">
@@ -66,6 +72,12 @@
       <Filter>소스 파일</Filter>
     </ClInclude>
     <ClInclude Include="CommonProtocol.h">
+      <Filter>소스 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="ProcessMonitor.h">
+      <Filter>소스 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="HardwareMonitor.h">
       <Filter>소스 파일</Filter>
     </ClInclude>
   </ItemGroup>

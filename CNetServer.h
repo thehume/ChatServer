@@ -156,6 +156,12 @@ private:
 	DWORD disconnectTPS = 0;
 	DWORD sendTPS = 0;
 	DWORD recvTPS = 0;
+
+	DWORD Temp_disconnectTPS = 0;
+	DWORD Temp_sendTPS = 0;
+	DWORD Temp_recvTPS = 0;
+
+	DWORD Temp_sessionNum = 0;
 	DWORD sessionNum = 0;
 
 	HANDLE hcp;

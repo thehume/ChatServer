@@ -550,32 +550,42 @@ DWORD WINAPI CNetServer::ControlThread(CNetServer* ptr)
 {
 	while (!ptr->Shutdown)
 	{
+		ptr->Temp_sendTPS = 0;
+		ptr->Temp_recvTPS = 0;
+		ptr->Temp_disconnectTPS = 0;
+		ptr->Temp_sessionNum = 0;
+		/*
 		ptr->sendTPS = 0;
 		ptr->recvTPS = 0;
 		ptr->disconnectTPS = 0;
+		*/
 
 		ptr->acceptTPS = ptr->acceptCount;
 		ptr->acceptCount = 0;
-		ptr->sessionNum = 0;
 
 		for (int i = 0; i < ptr->maxSession; i++)
 		{
 			if (ptr->sessionList[i].isValid == TRUE)
 			{
-				ptr->sessionNum++;
+				ptr->Temp_sessionNum++;
 			}
 
-			ptr->disconnectTPS += ptr->sessionList[i].disconnectCount;
+			ptr->Temp_disconnectTPS += ptr->sessionList[i].disconnectCount;
 			ptr->sessionList[i].disconnectCount = 0;
 
 
-			ptr->sendTPS += ptr->sessionList[i].sendCount;
+			ptr->Temp_sendTPS += ptr->sessionList[i].sendCount;
 			ptr->sessionList[i].sendCount = 0;
 
-			ptr->recvTPS += ptr->sessionList[i].recvCount;
+			ptr->Temp_recvTPS += ptr->sessionList[i].recvCount;
 			ptr->sessionList[i].recvCount = 0;
 
 		}
+		ptr->sendTPS = ptr->Temp_sendTPS;
+		ptr->recvTPS = ptr->Temp_recvTPS;
+		ptr->disconnectTPS = ptr->Temp_disconnectTPS;
+		ptr->sessionNum = ptr->Temp_sessionNum;
+
 		Sleep(1000);
 	}
 	return 0;
