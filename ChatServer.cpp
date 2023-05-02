@@ -162,13 +162,13 @@ bool CChatServer::packetProc_CS_CHAT_REQ_SECTOR_MOVE(st_Player* pPlayer, CPacket
 		return false;
 	}
 
-	/*
+	
 	if (SectorX >= dfSECTOR_MAX_X || SectorX < 0 || SectorY >= dfSECTOR_MAX_Y || SectorY < 0)
 	{
 		//로그찍기
 		return false;
 	}
-	*/
+	
 
 
 	//현재섹터에서 나 삭제

@@ -68,14 +68,14 @@ int main()
 		wprintf(L"JobQueue UseSize : %d\n", ChatServer.getJobQueueUseSize());
 		wprintf(L"PacketPool UseSize : %d\n", CPacket::getPoolUseSize() * POOL_BUCKET_SIZE);
 		wprintf(L"======================\n");
-		wprintf(L"Process User Memory : %d Bytes\n", (int)Process_Monitor.getProcessUserMemory());
-		wprintf(L"Process Nonpaged Memory : %d Bytes\n", (int)Process_Monitor.getProcessNonpagedMemory());
+		wprintf(L"Process User Memory : %lld Bytes\n", (INT64)Process_Monitor.getProcessUserMemory());
+		wprintf(L"Process Nonpaged Memory : %lld Bytes\n", (INT64)Process_Monitor.getProcessNonpagedMemory());
 		wprintf(L"Process : %f %%, ", Process_Monitor.getProcessTotal());
 		wprintf(L"ProcessKernel : %f %%, ", Process_Monitor.getProcessKernel());
 		wprintf(L"ProcessUser : %f %%\n", Process_Monitor.getProcessUser());
 		wprintf(L"======================\n");
 		wprintf(L"Available Memory : %d MBytes\n", (int)Hardware_Monitor.getAvailableMemory());
-		wprintf(L"Nonpaged Memory : %d Bytes\n", (int)Hardware_Monitor.getNonpagedMemory());
+		wprintf(L"Nonpaged Memory : %lld Bytes\n", (INT64)Hardware_Monitor.getNonpagedMemory());
 		wprintf(L"Processor : %f%%, ", Hardware_Monitor.getProcessorTotal());
 		wprintf(L"ProcessorKernel : %f%%, ", Hardware_Monitor.getProcessorKernel());
 		wprintf(L"ProcessorUser : %f%% \n", Hardware_Monitor.getProcessorUser());

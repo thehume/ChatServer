@@ -26,8 +26,8 @@ CProcessMonitor::CProcessMonitor(HANDLE ProcessHandle)
 	Process_LastTime.QuadPart = 0;
 
 	PdhOpenQuery(NULL, NULL, &ProcessQuery);
-	PdhAddCounter(ProcessQuery, L"\\Process(MapleStory)\\Private Bytes", NULL, &ProcessUserMemory);
-	PdhAddCounter(ProcessQuery, L"\\Process(MapleStory)\\Pool Nonpaged Bytes", NULL, &ProcessNonpagedMemory);
+	PdhAddCounter(ProcessQuery, L"\\Process(ChatServer)\\Private Bytes", NULL, &ProcessUserMemory);
+	PdhAddCounter(ProcessQuery, L"\\Process(ChatServer)\\Pool Nonpaged Bytes", NULL, &ProcessNonpagedMemory);
 
 	PdhCollectQueryData(ProcessQuery);
 
