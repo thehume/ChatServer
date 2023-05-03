@@ -48,7 +48,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -144,6 +144,7 @@
     <ClCompile Include="CNetServer.cpp" />
     <ClCompile Include="dumpClass.cpp" />
     <ClCompile Include="HardwareMonitor.cpp" />
+    <ClCompile Include="log.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Packet.cpp" />
     <ClCompile Include="ProcessMonitor.cpp" />
@@ -158,6 +159,7 @@
     <ClInclude Include="HardwareMonitor.h" />
     <ClInclude Include="LockFreeQueue.h" />
     <ClInclude Include="LockFreeStack.h" />
+    <ClInclude Include="log.h" />
     <ClInclude Include="MemoryPoolBucket.h" />
     <ClInclude Include="Packet.h" />
     <ClInclude Include="ProcessMonitor.h" />

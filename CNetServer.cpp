@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <unordered_map>
+#include "log.h"
 #include "ringbuffer.h"
 #include "MemoryPoolBucket.h"
 #include "Packet.h"

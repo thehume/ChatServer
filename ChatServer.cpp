@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <unordered_map>
+#include "log.h"
 #include "ringbuffer.h"
 #include "MemoryPoolBucket.h"
 #include "Packet.h"
@@ -158,14 +159,14 @@ bool CChatServer::packetProc_CS_CHAT_REQ_SECTOR_MOVE(st_Player* pPlayer, CPacket
 
 	if (pPlayer->AccountNo != AccountNo)
 	{
-		//로그찍기
+		systemLog(L"WRONG ACCOUNT NUM SECTORMOVE", dfLOG_LEVEL_DEBUG, L"AccountNo : %lld", AccountNo);
 		return false;
 	}
 
 	
 	if (SectorX >= dfSECTOR_MAX_X || SectorX < 0 || SectorY >= dfSECTOR_MAX_Y || SectorY < 0)
 	{
-		//로그찍기
+		systemLog(L"WRONG SECTOR POS", dfLOG_LEVEL_DEBUG, L" X %uh:  Y : %uh", SectorX, SectorY);
 		return false;
 	}
 	
@@ -212,18 +213,9 @@ bool CChatServer::packetProc_CS_CHAT_REQ_MESSAGE(st_Player* pPlayer, CPacket* pP
 	Message.len = MessageLen;
 	*pPacket >> Message;
 
-	/*
-	FILE* fp;
-	if (!fopen_s(&fp, "CHAT_MESSAGE", "at"))
-	{
-		fwprintf_s(fp, L"recv len : %d, chat message : %s\n", Message.len, Message.msg);
-		fclose(fp);
-	}
-	*/
-
 	if (pPlayer->AccountNo != AccountNo)
 	{
-		//로그찍기
+		systemLog(L"WRONG ACCOUNT NUM MESSAGE", dfLOG_LEVEL_DEBUG, L"AccountNo : %lld", AccountNo);
 		return false;
 	}
 
@@ -284,12 +276,20 @@ DWORD WINAPI CChatServer::LogicThread(CChatServer* pChatServer)
 {
 	st_JobItem jobItem;
 	WORD packetType;
-	while (!pChatServer->ShutDownFlag) // 일단 폴링
+	while (!pChatServer->ShutDownFlag)
 	{
 		//시간 쟤서 약 1초마다 모든세션의 lastPacket 확인 -> 40초가 지났다면 그세션끊기
 		ULONGLONG curTime = GetTickCount64();
 		if (curTime - pChatServer->lastTime > 1000)
 		{
+			pChatServer->Interval = curTime - pChatServer->lastTime;
+
+			pChatServer->JobCount = pChatServer->Temp_JobCount;
+			pChatServer->NumOfWFSO = pChatServer->Temp_NumOfWFSO;
+
+			pChatServer->Temp_JobCount = 0;
+			pChatServer->Temp_NumOfWFSO = 0;
+
 			pChatServer->lastTime = curTime;
 			st_Session* pSession;
 			for (auto iter = pChatServer->PlayerList.begin(); iter != pChatServer->PlayerList.end(); iter++)
@@ -303,6 +303,7 @@ DWORD WINAPI CChatServer::LogicThread(CChatServer* pChatServer)
 				{
 					if (pChatServer->pNetServer->findSession(player.sessionID, &pSession) == true)
 					{
+						systemLog(L"TimeOut", dfLOG_LEVEL_DEBUG, L"over time : %lld", curTime - player.lastTime);
 						pChatServer->pNetServer->disconnectSession(pSession);
 						if (InterlockedDecrement(&pSession->IOcount) == 0)
 						{
@@ -316,6 +317,9 @@ DWORD WINAPI CChatServer::LogicThread(CChatServer* pChatServer)
 
 		while (pChatServer->JobQueue.Dequeue(&jobItem) == true)
 		{
+			pChatServer->Temp_JobCount++;
+			pChatServer->Temp_JobCountperCycle++;
+
 			INT64 JobType = jobItem.JobType;
 			INT64 sessionID = jobItem.SessionID;
 			CPacket* pPacket = jobItem.pPacket;
@@ -416,6 +420,10 @@ DWORD WINAPI CChatServer::LogicThread(CChatServer* pChatServer)
 
 			}
 		}
+		
+		pChatServer->JobCountperCycle = pChatServer->Temp_JobCountperCycle;
+		pChatServer->Temp_JobCountperCycle = 0;
+		pChatServer->Temp_NumOfWFSO++;
 		WaitForSingleObject(pChatServer->hJobEvent, 1000);
 	}
 	return true;
@@ -449,6 +457,21 @@ size_t CChatServer::getCharacterNum(void) // 캐릭터수
 LONG CChatServer::getJobQueueUseSize(void)
 {
 	return this->JobQueue.nodeCount;
+}
+
+LONG CChatServer::getJobCount(void)
+{
+	return this->JobCount;
+}
+
+LONG CChatServer::getNumOfWFSO(void)
+{
+	return this->NumOfWFSO;
+}
+
+LONG CChatServer::getJobCountperCycle(void)
+{
+	return this->JobCountperCycle;
 }
 
 void CChatServer::sector_AddCharacter(st_Player* pPlayer) //섹터에 캐릭터 넣음

@@ -156,16 +156,30 @@ public:
     
     size_t getCharacterNum(void); // 캐릭터수
     LONG getJobQueueUseSize(void);
+    LONG getJobCount(void);
+    LONG getNumOfWFSO(void);
+    LONG getJobCountperCycle(void);
     void sector_AddCharacter(st_Player* pPlayer); //섹터에 캐릭터 넣음
     void sector_RemoveCharacter(st_Player* pPlayer); //섹터에서 캐릭터 삭제
     void getSectorAround(int sectorX, int sectorY, st_SectorAround* pSectorAround); //현재섹터 기준으로 9개섹터
     void makeSessionSet_AroundMe(st_Player* pPlayer, CSessionSet* InParamSet, bool sendMe = true); //"나" 기준으로 주위섹터의 세션 셋 가져옴
 
+    ULONGLONG Interval = 0;
 
 private:
     HANDLE hLogicThread;
     volatile bool ShutDownFlag;
     int maxPlayer;
+
+    int JobCount=0;
+    int NumOfWFSO=0;
+    int JobCountperCycle=0;
+
+    int Temp_JobCount=0;
+    int Temp_NumOfWFSO=0;
+    int Temp_JobCountperCycle=0;
+    
+
     ULONGLONG lastTime;
 
     CNetServer* pNetServer;

@@ -13,6 +13,7 @@
 #include <Pdh.h>
 #include <strsafe.h>
 #include <unordered_map>
+#include "log.h"
 #include "ringbuffer.h"
 #include "MemoryPoolBucket.h"
 #include "Packet.h"
@@ -41,6 +42,7 @@ CProcessMonitor Process_Monitor(GetCurrentProcess());
 
 int main()
 {
+	logInit();
 
 	CContentsHandler HandleInstance;
 	HandleInstance.attachServerInstance(&NetServer, &ChatServer);
@@ -66,7 +68,11 @@ int main()
 		wprintf(L"Send TPS : %d\n", NetServer.getSendMessageTPS());
 		wprintf(L"Recv TPS : %d\n", NetServer.getRecvMessageTPS());
 		wprintf(L"JobQueue UseSize : %d\n", ChatServer.getJobQueueUseSize());
+		wprintf(L"Job TPS : %d\n", ChatServer.getJobCount());
+		wprintf(L"Number Of Sleep per second : %d\n", ChatServer.getNumOfWFSO());
+		wprintf(L"Job Count Per Cycle : %d\n", ChatServer.getJobCountperCycle());
 		wprintf(L"PacketPool UseSize : %d\n", CPacket::getPoolUseSize() * POOL_BUCKET_SIZE);
+		wprintf(L"Time Check Interval : %lld\n", ChatServer.Interval);
 		wprintf(L"======================\n");
 		wprintf(L"Process User Memory : %lld Bytes\n", (INT64)Process_Monitor.getProcessUserMemory());
 		wprintf(L"Process Nonpaged Memory : %lld Bytes\n", (INT64)Process_Monitor.getProcessNonpagedMemory());
