@@ -393,15 +393,41 @@ void CNetServer::releaseSession(INT64 SessionID)
 	}
 
 	LONG tempCount = pSession->IOcount;
+	if (tempCount < 0)
+	{
+		systemLog(L"IOcount WRONG use", dfLOG_LEVEL_DEBUG, L"sessionID : %lld, IOcount : %d ", SessionID, tempCount);
+	}
 	if (InterlockedCompareExchange(&pSession->releaseFlag, DELFLAG_ON, tempCount) != tempCount)
 	{
 		return;
 	}
 
+	//이때 성공했으나, 만약 재할당된 세션에 대해 cas가 성공해버린것이라면? sessionID는 바뀌었을 것이다.
+	INT64 tempID = pSession->sessionID;
+	if (SessionID != pSession->sessionID)
+	{
+		//systemLog(L"double Closesocket Try", dfLOG_LEVEL_DEBUG, L"old sessionID : %lld, new sessionID : %lld ", SessionID, pSession->sessionID);
+		InterlockedIncrement(&pSession->IOcount);
+		InterlockedExchange(&pSession->releaseFlag, DELFLAG_OFF);
+		if (InterlockedDecrement(&pSession->IOcount) == 0)
+		{
+			releaseSession(tempID);
+		}
+		return;
+	}
 	//정리로직시작
+
+
+
 	_InterlockedExchange(&pSession->isValid, FALSE);
 	closesocket(pSession->sock);
 	pSession->disconnectCount++;
+
+	if (SessionID != pSession->sessionID)
+	{
+		//CrashDump::Crash();
+		systemLog(L"double Closesocket occur", dfLOG_LEVEL_DEBUG, L"old sessionID : %lld, new sessionID : %lld ", SessionID, pSession->sessionID);
+	}
 
 	//sendQueue, sentpacketArray 정리부분
 	CPacket* pPacket;
@@ -467,6 +493,7 @@ void CNetServer::sendPacket(INT64 SessionID, CPacket* pPacket, BOOL LastPacket)
 	//LockFree Sendqueue Enqueue
 	if (pSession->sendQueue.Enqueue(pPacket) == false)
 	{
+		systemLog(L"Enqueue Fail", dfLOG_LEVEL_DEBUG, L"Session Number : %lld ", SessionID);
 		disconnectSession(pSession);
 		if (InterlockedDecrement(&pSession->IOcount) == 0)
 		{
@@ -484,6 +511,7 @@ void CNetServer::sendPacket(INT64 SessionID, CPacket* pPacket, BOOL LastPacket)
 	InterlockedIncrement(&pSession->IOcount);
 	if (PostQueuedCompletionStatus(hcp, dfSENDPOST_REQ, (ULONG_PTR)pSession, 0) == FALSE)
 	{
+		systemLog(L"PQCS Fail", dfLOG_LEVEL_DEBUG, L"Error code : %d", WSAGetLastError());
 		if (InterlockedDecrement(&pSession->IOcount) == 0)
 		{
 			releaseSession(SessionID);
@@ -633,10 +661,10 @@ DWORD WINAPI CNetServer::AcceptThread(CNetServer* ptr)
 		INT64 AllocNum = ptr->sessionAllocNum++;//CompletionKey로 사용
 		INT64 newSessionID = (AllocNum << 16 | (INT64)index);
 		st_Session* pSession = &ptr->sessionList[index];
+		InterlockedExchange64(&pSession->sessionID, newSessionID);
 		CreateIoCompletionPort((HANDLE)client_sock, ptr->hcp, (ULONG_PTR)pSession, 0);
 
 		InterlockedIncrement(&pSession->IOcount);
-		pSession->sessionID = newSessionID;
 		InterlockedExchange(&pSession->isValid, TRUE);
 		InterlockedExchange(&pSession->releaseFlag, DELFLAG_OFF);
 		ZeroMemory(&pSession->RecvOverlapped, sizeof(WSAOVERLAPPED));
@@ -678,6 +706,7 @@ DWORD WINAPI CNetServer::AcceptThread(CNetServer* ptr)
 			}
 			else
 			{
+				systemLog(L"AcceptThread RecvError", dfLOG_LEVEL_DEBUG, L"Error code : %d", WSAGetLastError());
 				if (InterlockedDecrement(&pSession->IOcount) == 0)
 				{
 					ptr->releaseSession(newSessionID);
@@ -740,23 +769,20 @@ DWORD WINAPI CNetServer::WorkerThread(CNetServer* ptr)
 					pSession->recvQueue.Peek((char*)&header, sizeof(st_header));
 					if (header.code != dfNETWORK_CODE) //key값 다를시 잘못된 패킷
 					{
-						//로그찍을 위치
+						systemLog(L"NETWORK CODE WRONG", dfLOG_LEVEL_DEBUG, L"%d", header.code);
 						ptr->disconnectSession(pSession);
 						break;
 					}
 
 					if (header.len > CPacket::en_PACKET::BUFFER_DEFAULT || header.len < 0) // len값 부정확할시 잘못된 패킷
 					{
-						//로그찍을 위치
+						systemLog(L"PACKET LEN WRONG", dfLOG_LEVEL_DEBUG, L"%d", header.len);
 						ptr->disconnectSession(pSession);
 						break;
 					}
 
 					if (header.len + dfNETWORK_HEADER_SIZE > pSession->recvQueue.GetUseSize()) //아직 다 안 온 상황
-					{
-						//로그찍을 위치
-						
-						//ptr->disconnectSession(pSession);
+					{					
 						break;						
 					}
 
@@ -766,14 +792,24 @@ DWORD WINAPI CNetServer::WorkerThread(CNetServer* ptr)
 					int ret_dequeue = pSession->recvQueue.Dequeue(pRecvBuf->GetWriteBufferPtr(), header.len + dfNETWORK_HEADER_SIZE);
 					if (ret_dequeue <= 0)
 					{
-						//로그찍을 위치
+						systemLog(L"RECV DEQUEUE FAIL", dfLOG_LEVEL_DEBUG, L"");
+						int ret_ref = pRecvBuf->subRef();
+						if (ret_ref == 0)
+						{
+							CPacket::mFree(pRecvBuf);
+						}
 						ptr->disconnectSession(pSession); //Dequeue 오류
 						break;
 					}
 					pRecvBuf->MoveWritePos(ret_dequeue);
 					if (pRecvBuf->Decode() == FALSE)
 					{
-						//로그찍을 위치
+						int ret_ref = pRecvBuf->subRef();
+						if (ret_ref == 0)
+						{
+							CPacket::mFree(pRecvBuf);
+						}
+						systemLog(L"DECODE FAIL", dfLOG_LEVEL_DEBUG, L"");
 						ptr->disconnectSession(pSession); //패킷 디코딩 실패
 						break;
 					}
@@ -808,10 +844,6 @@ DWORD WINAPI CNetServer::WorkerThread(CNetServer* ptr)
 					if (ret_ref == 0)
 					{
 						CPacket::mFree(pPacket);
-					}
-					else if(ret_ref < 0)
-					{
-						printf("abc");
 					}
 				}
 				InterlockedExchange(&pSession->sendPacketCount, 0);

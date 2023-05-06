@@ -323,7 +323,6 @@ DWORD WINAPI CChatServer::LogicThread(CChatServer* pChatServer)
 			INT64 JobType = jobItem.JobType;
 			INT64 sessionID = jobItem.SessionID;
 			CPacket* pPacket = jobItem.pPacket;
-			//st_Player& player = pChatServer->PlayerList[index];
 
 			switch (JobType)
 			{
