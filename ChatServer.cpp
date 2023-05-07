@@ -294,7 +294,7 @@ DWORD WINAPI CChatServer::LogicThread(CChatServer* pChatServer)
 			st_Session* pSession;
 			for (auto iter = pChatServer->PlayerList.begin(); iter != pChatServer->PlayerList.end(); iter++)
 			{
-				st_Player& player = iter->second;
+				st_Player& player = *iter->second;
 				if (player.isValid == FALSE)
 				{
 					continue;
@@ -329,17 +329,18 @@ DWORD WINAPI CChatServer::LogicThread(CChatServer* pChatServer)
 			case en_JOB_ON_CLIENT_JOIN:
 			{
 				//여기 플레이어리스트에 넣어주는게 필요함
-				st_Player newPlayer;
-				newPlayer.isValid = true;
-				newPlayer.AccountNo = 0;
-				wcscpy_s(newPlayer.ID.name, L"NULL");
-				wcscpy_s(newPlayer.Nickname.name, L"NULL");
-				newPlayer.sectorPos.sectorX = 65535;
-				newPlayer.sectorPos.sectorY = 65535;
-				newPlayer.sessionID = sessionID;
-				newPlayer.lastTime = GetTickCount64();
+				st_Player* pNewPlayer;
+				pChatServer->PlayerPool.mAlloc(&pNewPlayer);
+				pNewPlayer->isValid = true;
+				pNewPlayer->AccountNo = 0;
+				wcscpy_s(pNewPlayer->ID.name, L"NULL");
+				wcscpy_s(pNewPlayer->Nickname.name, L"NULL");
+				pNewPlayer->sectorPos.sectorX = 65535;
+				pNewPlayer->sectorPos.sectorY = 65535;
+				pNewPlayer->sessionID = sessionID;
+				pNewPlayer->lastTime = GetTickCount64();
 
-				pChatServer->PlayerList.insert(make_pair(sessionID, newPlayer));
+				pChatServer->PlayerList.insert(make_pair(sessionID, pNewPlayer));
 				break;
 			}
 
@@ -349,12 +350,14 @@ DWORD WINAPI CChatServer::LogicThread(CChatServer* pChatServer)
 				auto item = pChatServer->PlayerList.find(sessionID);
 				if (item != pChatServer->PlayerList.end())
 				{
-					st_SectorPos& sectorPos = item->second.sectorPos;
+					st_Player* pPlayer = item->second;
+					st_SectorPos& sectorPos = item->second->sectorPos;
 					if (sectorPos.sectorX < dfSECTOR_MAX_X && sectorPos.sectorX >= 0 && sectorPos.sectorY < dfSECTOR_MAX_Y && sectorPos.sectorY >= 0)
 					{
-						pChatServer->sector_RemoveCharacter(&item->second);
+						pChatServer->sector_RemoveCharacter(item->second);
 					}
 					pChatServer->PlayerList.erase(item);
+					pChatServer->PlayerPool.mFree(pPlayer);
 				}
 				break;
 			}
@@ -373,7 +376,7 @@ DWORD WINAPI CChatServer::LogicThread(CChatServer* pChatServer)
 					break;
 				}
 
-				st_Player& player = item->second;
+				st_Player& player = *item->second;
 				if (player.sessionID != jobItem.SessionID)
 				{
 					if (pPacket->subRef() == 0)
@@ -471,6 +474,11 @@ LONG CChatServer::getNumOfWFSO(void)
 LONG CChatServer::getJobCountperCycle(void)
 {
 	return this->JobCountperCycle;
+}
+
+LONG CChatServer::getPlayerPoolUseSize(void)
+{
+	return this->PlayerPool.getUseSize();
 }
 
 void CChatServer::sector_AddCharacter(st_Player* pPlayer) //섹터에 캐릭터 넣음

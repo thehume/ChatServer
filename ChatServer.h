@@ -159,6 +159,7 @@ public:
     LONG getJobCount(void);
     LONG getNumOfWFSO(void);
     LONG getJobCountperCycle(void);
+    LONG getPlayerPoolUseSize(void);
     void sector_AddCharacter(st_Player* pPlayer); //섹터에 캐릭터 넣음
     void sector_RemoveCharacter(st_Player* pPlayer); //섹터에서 캐릭터 삭제
     void getSectorAround(int sectorX, int sectorY, st_SectorAround* pSectorAround); //현재섹터 기준으로 9개섹터
@@ -184,10 +185,11 @@ private:
 
     CNetServer* pNetServer;
 
-    alignas(64) unordered_map<INT64, st_Player> PlayerList;
+    alignas(64) unordered_map<INT64, st_Player*> PlayerList;
 
     alignas(64) list<INT64> g_Sector[dfSECTOR_MAX_Y][dfSECTOR_MAX_X];
     alignas(64) LockFreeQueue<st_JobItem> JobQueue;
+    alignas(64) CMemoryPool<CChatServer::st_Player> PlayerPool;
     alignas(64) HANDLE hJobEvent;
 };
 

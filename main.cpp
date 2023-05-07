@@ -72,6 +72,7 @@ int main()
 		wprintf(L"Number Of Sleep per second : %d\n", ChatServer.getNumOfWFSO());
 		wprintf(L"Job Count Per Cycle : %d\n", ChatServer.getJobCountperCycle());
 		wprintf(L"PacketPool UseSize : %d\n", CPacket::getPoolUseSize() * POOL_BUCKET_SIZE);
+		wprintf(L"PlayerPool UseSize : %d\n", ChatServer.getPlayerPoolUseSize());
 		wprintf(L"Time Check Interval : %lld\n", ChatServer.Interval);
 		wprintf(L"======================\n");
 		wprintf(L"Process User Memory : %lld Bytes\n", (INT64)Process_Monitor.getProcessUserMemory());
