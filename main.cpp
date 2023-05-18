@@ -32,7 +32,7 @@ using namespace std;
 CrashDump myDump;
 
 WCHAR IPaddress[20] = L"0.0.0.0";
-CInitParam initParam(IPaddress, 6000, 6, 3, true, 15000);
+CInitParam initParam(IPaddress, 6000, 3, 3, true, 15000);
 CNetServer NetServer(&initParam);
 CChatServer ChatServer;
 
@@ -52,7 +52,9 @@ int main()
 
 	ChatServer.Start();
 	NetServer.Start();
-	int i = 10;
+	int i = 600;
+
+	ULONGLONG startTime = GetTickCount64();
 
 	while (1)
 	{
@@ -90,8 +92,14 @@ int main()
 		wprintf(L"NetWork SendBytes : %d Bytes\n", (int)Hardware_Monitor.getSendBytes());
 		wprintf(L"======================\n");
 		Sleep(1000);
-		//i--;
+		i--;
 	}
+
+	ULONGLONG lastTime = GetTickCount64();
+
+	ULONGLONG totalTime = (lastTime - startTime) / 1000;
+	INT64 tpsAVG = NetServer.getTotalTPS() / totalTime;;
+	systemLog(L"total TPS single", dfLOG_LEVEL_DEBUG, L"TPS AVG : %lld", tpsAVG);
 
 	ChatServer.Stop();
 	NetServer.Stop();

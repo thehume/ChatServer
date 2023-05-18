@@ -116,6 +116,7 @@ public:
 	int getDisconnectTPS();
 	int getRecvMessageTPS();
 	int getSendMessageTPS();
+	INT64 getTotalTPS();
 
 	void attachHandler(CNetServerHandler* pHandler);
 
@@ -151,6 +152,8 @@ private:
 	DWORD disconnectCount = 0;
 	DWORD sendCount = 0;
 	DWORD recvCount = 0;
+
+	INT64 TPSTotal = 0;
 
 	DWORD acceptTPS = 0;
 	DWORD disconnectTPS = 0;

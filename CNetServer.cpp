@@ -570,6 +570,11 @@ int CNetServer::getSendMessageTPS()
 	return this->sendTPS;
 }
 
+INT64 CNetServer::getTotalTPS()
+{
+	return this->TPSTotal;
+}
+
 void CNetServer::attachHandler(CNetServerHandler* pHandler)
 {
 	this->pHandler = pHandler;
@@ -612,6 +617,7 @@ DWORD WINAPI CNetServer::ControlThread(CNetServer* ptr)
 		}
 		ptr->sendTPS = ptr->Temp_sendTPS;
 		ptr->recvTPS = ptr->Temp_recvTPS;
+		ptr->TPSTotal += ptr->Temp_recvTPS;
 		ptr->disconnectTPS = ptr->Temp_disconnectTPS;
 		ptr->sessionNum = ptr->Temp_sessionNum;
 
