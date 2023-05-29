@@ -18,6 +18,7 @@ struct st_JobItem
 {
     INT64 JobType;
     INT64 SessionID;
+    INT64 AccountNo;
     CPacket* pPacket;
 };
 
@@ -154,12 +155,14 @@ public:
 
     bool PacketProc(st_Player* pPlayer, WORD PacketType, CPacket* pPacket, INT64 SessionID);
     
+    void updateJobCount(void);
     size_t getCharacterNum(void); // 캐릭터수
     LONG getJobQueueUseSize(void);
     LONG getJobCount(void);
     LONG getNumOfWFSO(void);
     LONG getJobCountperCycle(void);
     LONG getPlayerPoolUseSize(void);
+    LONG getJobPoolUseSize(void);
     void sector_AddCharacter(st_Player* pPlayer); //섹터에 캐릭터 넣음
     void sector_RemoveCharacter(st_Player* pPlayer); //섹터에서 캐릭터 삭제
     void getSectorAround(int sectorX, int sectorY, st_SectorAround* pSectorAround); //현재섹터 기준으로 9개섹터
@@ -185,11 +188,12 @@ private:
 
     CNetServer* pNetServer;
 
-    alignas(64) unordered_map<INT64, st_Player*> PlayerList;
+    unordered_map<INT64, st_Player*> PlayerList;
+    list<INT64> g_Sector[dfSECTOR_MAX_Y][dfSECTOR_MAX_X];
 
-    alignas(64) list<INT64> g_Sector[dfSECTOR_MAX_Y][dfSECTOR_MAX_X];
-    alignas(64) LockFreeQueue<st_JobItem> JobQueue;
+    alignas(64) LockFreeQueue<st_JobItem*> JobQueue;
     alignas(64) CMemoryPool<CChatServer::st_Player> PlayerPool;
+    alignas(64) CMemoryPoolBucket<st_JobItem> JobPool;
     alignas(64) HANDLE hJobEvent;
 };
 
@@ -202,33 +206,61 @@ public:
         pChatServer = contentsServer;
     }
     virtual bool OnConnectionRequest() { return true; }
-    virtual void OnClientJoin(INT64 sessionID)
+    virtual void OnClientJoin(INT64 SessionID)
     {
+        /*
         st_JobItem jobItem;
         jobItem.JobType = en_JOB_ON_CLIENT_JOIN;
         jobItem.SessionID = sessionID;
         jobItem.pPacket = NULL;
+        */
+
+        st_JobItem* jobItem;
+        pChatServer->JobPool.mAlloc(&jobItem);
+        jobItem->JobType = en_JOB_ON_CLIENT_JOIN;
+        jobItem->SessionID = SessionID;
+        jobItem->pPacket = NULL;
+        
+
         pChatServer->JobQueue.Enqueue(jobItem); // 해당 캐릭터 생성요청
         SetEvent(pChatServer->hJobEvent);
     }
 
-    virtual void OnClientLeave(INT64 sessionID)
+    virtual void OnClientLeave(INT64 SessionID)
     {
+        /*
         st_JobItem jobItem;
         jobItem.JobType = en_JOB_ON_CLIENT_LEAVE;
         jobItem.SessionID = sessionID;
         jobItem.pPacket = NULL;
+        */
+
+        st_JobItem* jobItem;
+        pChatServer->JobPool.mAlloc(&jobItem);
+        jobItem->JobType = en_JOB_ON_CLIENT_LEAVE;
+        jobItem->SessionID = SessionID;
+        jobItem->pPacket = NULL;
+
         pChatServer->JobQueue.Enqueue(jobItem); //해당 캐릭터 삭제요청
         SetEvent(pChatServer->hJobEvent);
     }
 
-    virtual bool OnRecv(INT64 SessionID, CPacket* pPacket) //우선 시그널링방식은 아님! 채팅서버가 폴링을 할꺼기때문
+    virtual bool OnRecv(INT64 SessionID, CPacket* pPacket) 
     {
         pPacket->addRef(1);
+        /*
         st_JobItem jobItem;
         jobItem.JobType = en_JOB_ON_RECV;
         jobItem.SessionID = SessionID;
         jobItem.pPacket = pPacket;
+        */
+
+        st_JobItem* jobItem;
+        pChatServer->JobPool.mAlloc(&jobItem);
+        jobItem->JobType = en_JOB_ON_RECV;
+        jobItem->SessionID = SessionID;
+        jobItem->pPacket = pPacket;
+
         if (pChatServer->JobQueue.Enqueue(jobItem) == false)
         {
             if (pPacket->subRef() == 0)

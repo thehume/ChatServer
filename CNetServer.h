@@ -124,6 +124,9 @@ public:
 	static DWORD WINAPI AcceptThread(CNetServer* ptr);
 	static DWORD WINAPI WorkerThread(CNetServer* ptr);
 
+	DWORD InitErrorNum;
+	DWORD InitErrorCode;
+
 private:
 	CNetServerHandler* pHandler;
 
@@ -141,8 +144,6 @@ private:
 	LockFreeStack<int> emptyIndexStack;
 
 	BOOL InitFlag;
-	DWORD InitErrorNum;
-	DWORD InitErrorCode;
 	BOOL Shutdown;
 
 	INT64 sessionAllocNum;
