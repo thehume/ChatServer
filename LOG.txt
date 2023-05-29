@@ -1,0 +1,2 @@
+[total TPS single] [May 29 2023 22:03:23] [LogCount : 0] TPS AVG : 0
+[ACCEPT EXCEPTION] [May 29 2023 22:03:23] [LogCount : 1] ErrorCode : 10038

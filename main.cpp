@@ -13,6 +13,7 @@
 #include <Pdh.h>
 #include <strsafe.h>
 #include <unordered_map>
+#include <conio.h>
 #include "log.h"
 #include "ringbuffer.h"
 #include "MemoryPoolBucket.h"
@@ -42,6 +43,7 @@ CProcessMonitor Process_Monitor(GetCurrentProcess());
 
 int main()
 {
+	bool g_ShutDown = false;
 	logInit();
 
 	CContentsHandler HandleInstance;
@@ -67,8 +69,17 @@ int main()
 	ULONGLONG lastTime=0;
 	ULONGLONG nowTime=0;
 	ULONGLONG interval=0;
-	while (1)
+	while (!g_ShutDown)
 	{
+		if (_kbhit())
+		{
+			WCHAR ControlKey = _getwch();
+			if (L'q' == ControlKey || L'Q' == ControlKey)
+			{
+				g_ShutDown = true;
+			}
+		}
+
 		nowTime = GetTickCount64();
 		interval = nowTime - lastTime;
 		lastTime = nowTime;
