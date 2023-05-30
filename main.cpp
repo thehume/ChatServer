@@ -33,7 +33,7 @@ using namespace std;
 CrashDump myDump;
 
 WCHAR IPaddress[20] = L"0.0.0.0";
-CInitParam initParam(IPaddress, 6000, 6, 3, true, 15000);
+CInitParam initParam(IPaddress, 6000, 6, 3, true, 20000);
 CNetServer NetServer(&initParam);
 CChatServer ChatServer;
 
@@ -43,7 +43,7 @@ CProcessMonitor Process_Monitor(GetCurrentProcess());
 
 int main()
 {
-	bool g_ShutDown = false;
+	volatile bool g_ShutDown = false;
 	logInit();
 
 	CContentsHandler HandleInstance;
@@ -104,6 +104,7 @@ int main()
 		wprintf(L"JobPool UseSize : %d\n", ChatServer.getJobPoolUseSize() * POOL_BUCKET_SIZE);
 		wprintf(L"Time Check Interval : %lld\n", ChatServer.Interval);
 		wprintf(L"Monitoring Interval : %lld\n", interval);
+		wprintf(L"real Job TPS : %d\n", ChatServer.getJobCount()*1000/(DWORD)interval);
 		wprintf(L"======================\n");
 		wprintf(L"Process User Memory : %lld Bytes\n", (INT64)Process_Monitor.getProcessUserMemory());
 		wprintf(L"Process Nonpaged Memory : %lld Bytes\n", (INT64)Process_Monitor.getProcessNonpagedMemory());

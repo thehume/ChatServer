@@ -15,6 +15,7 @@
 #define SESSION_DISCONNECT 3
 
 #define dfSENDPOST_REQ 0xFFFF
+//#define dfRELEASE_REQ 0x00FF
 
 struct st_MyOverlapped
 {

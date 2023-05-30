@@ -704,7 +704,7 @@ DWORD WINAPI CNetServer::AcceptThread(CNetServer* ptr)
 		BOOL ret_pop = ptr->emptyIndexStack.pop(&index);
 		if (ret_pop == FALSE)
 		{
-			wprintf(L"sessionList full\n");
+			systemLog(L"ACCEPT EXCEPTION", dfLOG_LEVEL_DEBUG, L"sessionList FULL");
 			closesocket(client_sock);
 		}
 
