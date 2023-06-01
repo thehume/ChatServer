@@ -272,7 +272,7 @@ DWORD WINAPI CChatServer::LogicThread(CChatServer* pChatServer)
 	{
 		//시간 쟤서 약 1초마다 모든세션의 lastPacket 확인 -> 40초가 지났다면 그세션끊기
 		ULONGLONG curTime = GetTickCount64();
-		if (curTime - pChatServer->lastTime > 10000)
+		if (curTime - pChatServer->lastTime > 40000)
 		{
 			pChatServer->Interval = curTime - pChatServer->lastTime;
 
@@ -414,7 +414,7 @@ DWORD WINAPI CChatServer::LogicThread(CChatServer* pChatServer)
 		pChatServer->JobCountperCycle = pChatServer->Temp_JobCountperCycle;
 		pChatServer->Temp_JobCountperCycle = 0;
 		pChatServer->Temp_NumOfWFSO++;
-		WaitForSingleObject(pChatServer->hJobEvent, 1000);
+		WaitForSingleObject(pChatServer->hJobEvent, 40000);
 	}
 	return true;
 }
